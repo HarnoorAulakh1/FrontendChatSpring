@@ -63,7 +63,7 @@ function Messaging({
     }, 200);
   }, [messages]);
   useEffect(() => {
-    const handleNewMessage = async (message: messageInterface ) => {
+    const handleNewMessage = async (message: messageInterface) => {
       console.log("New message received:", message);
       try {
         const response = await api.post(
@@ -73,20 +73,18 @@ function Messaging({
       } catch (error) {
         console.error("Error marking messages as read:", error);
       }
-      if (
-        (message.receiverEm &&
-          message.senderEm?.id == id &&
-          message.receiverEm.id == user.id) ||
-        (message.receiverEm &&
-          message.senderEm?.id &&
-                message.receiverEm.id == id)
-      )
+      if (message.sender == id && message.receiver == user.id)
         setMessages((prev) => [...prev, message]);
     };
-    const sub1=user.subscribe("/user/topic/messages", handleNewMessage);
+
+    let sub=null;
+    if (user.subscribe) {
+      sub = user.subscribe("/user/topic/messages", handleNewMessage);
+    }
     // socket.on("message_read",)
     return () => {
-      sub1.unsubscribe();
+      if (sub != null)
+      sub.unsubscribe();
     };
   }, [setMessages, user.subscribe, user.id, id]);
 
@@ -113,6 +111,7 @@ function Messaging({
   async function sendMessage(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    (e.target as HTMLFormElement).reset();
     const content = formData.get("content") as string;
     const form = new FormData();
     const newMessage: messageInterface = {
@@ -129,7 +128,7 @@ function Messaging({
         type: "",
         name: "",
         link: "",
-      }
+      },
     };
     if (file && file.type) {
       newMessage.file = {
@@ -163,11 +162,8 @@ function Messaging({
       });
       return;
     }
-    console.log("Message sent successfully:", response.data);
-    console.log("New message:", newMessage);
-    setMessages(() => [...messages, newMessage]);
+    setMessages((x) => [...x, newMessage]);
     setFile({} as File);
-    (e.target as HTMLFormElement).reset();
   }
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -300,11 +296,10 @@ function Message({
       }
     };
     let sub1: StompSubscription | null;
-    if (!isRead)
+    if (!isRead && user.subscribe)
       sub1 = user.subscribe("/user/topic/markAsRead", handleMessageRead);
     return () => {
-      if (sub1 != null)
-        sub1.unsubscribe(); 
+      if (sub1 != null) sub1.unsubscribe();
     };
   }, [user.subscribe, user.id, time, receiver, isRead]);
   return (
@@ -325,7 +320,7 @@ function Message({
         <div className="flex flex-row items-center gap-2">
           <p>{message}</p>
         </div>
-        {file?.link && file.link.length>0 && (
+        {file?.link && file.link.length > 0 && (
           <div className="flex flex-col gap-2 items-center">
             {file.type == "image" ? (
               <a

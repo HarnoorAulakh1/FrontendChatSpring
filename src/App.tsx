@@ -6,7 +6,6 @@ import UiProvider from "./contexts/notificationProvider";
 import Auth from "./components/auth/auth";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import NotificationProvider from "./contexts/notificationProvider";
-import StompSocket from "./lib/StompSocket";
 
 function App() {
   const router = createBrowserRouter([
@@ -29,7 +28,6 @@ function App() {
         <NotificationProvider>
           <CurrentProvider>
             <MessageProvider>
-             <StompSocket />
               <RouterProvider router={router} />
             </MessageProvider>
           </CurrentProvider>

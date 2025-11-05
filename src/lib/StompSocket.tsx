@@ -2,67 +2,106 @@ import { useState, useRef, useContext, useEffect } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { profileContext } from "@/contexts/profile";
-import type { userInterface } from "./types";
+import { useCallback } from "react";
 
 export default function useStompClient() {
-  const [connected, setConnected] = useState(false);
+  const [subs, setSubs] = useState<
+    { destination: string; callback: (body: any) => void }[]
+  >([]);
   const { user, setUser } = useContext(profileContext);
+  const [connected, setConnected] = useState(false);
   const clientRef = useRef<Client | null>(null);
+  const sendMessage = useCallback((destination: string, body: any) => {
+    if (clientRef.current?.connected) {
+      clientRef.current.publish({
+        destination,
+        body: JSON.stringify(body),
+      });
+    } else {
+      console.warn("⚠️ Not connected, message not sent");
+    }
+  }, []);
+
+  const disconnect = useCallback(() => {
+    clientRef.current?.deactivate();
+  }, []);
+
+  const subscribe = useCallback((destination: string, callback: any) => {
+    setSubs((prev) => [...prev, { destination, callback }]);
+
+    if (clientRef.current?.connected) {
+      return clientRef.current.subscribe(destination, (message) =>
+        callback(JSON.parse(message.body))
+      );
+    }
+  }, []);
+
+  const onConnect = useCallback((stompClient: Client) => {
+    console.log("✅ Connected");
+    setConnected(true)
+    subs.forEach((sub) => {
+      stompClient.subscribe(sub.destination, (msg) =>
+        sub.callback(JSON.parse(msg.body))
+      );
+    });
+  }, [subs]);
 
   useEffect(() => {
-    console.log("🔄 Initializing STOMP client…", user.id);
-    const socket = new SockJS(`http://localhost:4000/ws?username=` + user.id);
+    if (connected) return;
+    const socket = new SockJS(`http://localhost:4000/ws?username=${user.id}`);
 
     const stompClient = new Client({
       webSocketFactory: () => socket,
-      reconnectDelay: 5000,
     });
-    stompClient.onConnect = () => {
-      console.log("STOMP client connected.");
-      setUser((x: userInterface) => {
-        return {
-          ...x,
-          sendMessage: sendMessage,
-          subscribe: subscribe,
-          disconnect: disconnect,
-        };
-      });
-      setConnected(true);
-    };
-    stompClient.onStompError = (frame) => {
-      console.error("STOMP error:", frame.headers["message"]);
-      console.error("Details:", frame.body);
+
+    stompClient.onConnect = () => onConnect(stompClient);
+
+    stompClient.onWebSocketClose = () => {
+      console.log("❌ Connection lost");
+      setConnected(false);
     };
 
     stompClient.activate();
     clientRef.current = stompClient;
 
-    function sendMessage(destination: string, body: any) {
-        console.log("Sending message to", destination, body);
-      if (!connected && !clientRef.current) return;
-      clientRef.current?.publish({
-        destination: destination,
-        body: JSON.stringify(body),
-      });
-    }
+    return () => {
+      console.log("🔌 Cleaning up...");
+      if (!connected) stompClient.deactivate();
+    };
+  }, [user.id, subs,onConnect]);
 
-    function disconnect() {
-      if (!connected && !clientRef.current) return;
-      clientRef.current?.deactivate();
-      setConnected(false);
-    }
-
-    function subscribe(destination: string, callback: (body: any) => void) {
-      if (!connected && !clientRef.current) return;
-      return clientRef.current?.subscribe(destination, (message) => {
-        callback(JSON.parse(message.body));
-      });
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null;
+    if (!connected && clientRef.current) {
+      interval = setInterval(() => {
+        console.log("🔄 Attempting to reconnect...");
+        clientRef.current = new Client({
+          webSocketFactory: () =>
+            new SockJS(`http://localhost:4000/ws?username=${user.id}`),
+        });
+        clientRef.current.onConnect = () => onConnect(clientRef.current!);
+        clientRef.current.activate();
+        if (clientRef.current.connected) {
+          console.log("✅ Reconnected");
+          return;
+        }
+      }, 5000);
     }
     return () => {
-      console.log("🔌 Deactivating STOMP client…");
-      stompClient.deactivate();
+      if (clientRef.current && interval != null) {
+        clearInterval(interval);
+      }
     };
-  }, [user.id]);
+  }, [connected, user.id, onConnect]);
+
+  useEffect(() => {
+    setUser((x) => ({
+      ...x,
+      sendMessage,
+      subscribe,
+      disconnect,
+    }));
+  }, [sendMessage, subscribe, disconnect, setUser,connected]);
 
   // sendMessage("/app/connect", { content: "Hello, World!" });
 

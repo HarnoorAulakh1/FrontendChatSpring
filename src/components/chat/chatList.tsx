@@ -111,7 +111,7 @@ function ChatListItem({
           content.substring(0, 20) + (content.length > 20 ? "..." : "")
         );
         setTime(formatTime(message.created_At));
-        if (message.sender !== user.id && current.id != id)
+        if ((message.sender !== user.id && current.id != id) && (message.sender !== id && current.id != user.id))
           setUnread((prev) => prev + 1);
       }
     };
@@ -165,6 +165,7 @@ function ChatListItem({
           const data = response.data;
           setIsOnline(data.isOnline);
         }
+        console.log("Online status data:", response.data);
       } catch (error) {
         console.error("Error checking online status:", error);
       }

@@ -8,6 +8,7 @@ import { useState } from "react";
 import Loader from "@/lib/loader";
 import useNotify from "@/hooks/useNotify";
 import type { notificationInterface } from "@/lib/types";
+import StompSocket from "@/lib/StompSocket";
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -74,6 +75,7 @@ export default function AppLayout() {
     <div className="bg-[#171717] text-[#e5e5e5] flex flex-row w-full h-[100%] overflow-y-hidden">
       {loading ? (
         <>
+        <StompSocket />
           <SideBar />
           <ChatArea />
         </>
