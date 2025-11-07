@@ -5,3 +5,16 @@ export default function Loader() {
     </div>
   );
 }
+
+export function TypingLoader() {
+  return (
+    <div
+      className={`flex flex-row gap-2 bg-gray-800 text-white self-start p-3 rounded-lg max-w-xs`}
+    >
+      <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce delay-75"></div>
+      <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce delay-150"></div>
+      <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce delay-225"></div>
+      <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce delay-300"></div>
+    </div>
+  );
+}

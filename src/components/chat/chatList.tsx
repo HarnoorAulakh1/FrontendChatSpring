@@ -29,7 +29,8 @@ export default function ChatList({
   const { user } = useContext(profileContext);
   useEffect(() => {
     const add_friend = async (data: notificationInterface) => {
-      if (data.type != "friend_reqt") return;
+      console.log("New friend notification received:", data);
+      if (data.type != "friend_req_accepted") return;
       const response = await api.get("/user/getUserById/" + data.sender);
       if (response.status == 200) {
         const userData = response.data;
@@ -38,11 +39,11 @@ export default function ChatList({
     };
     if (!user.subscribe) return;
     let sub1 = null;
-    sub1 = user.subscribe("/topic/notifications", add_friend);
+    sub1 = user.subscribe("/user/topic/friendAccepted", add_friend);
     return () => {
       if (sub1 != null) sub1.unsubscribe();
     };
-  }, [user.subscribe]);
+  }, [user.subscribe,user]);
   useEffect(() => {
     async function fetchFriends() {
       setLoading(true);
@@ -111,7 +112,12 @@ function ChatListItem({
           content.substring(0, 20) + (content.length > 20 ? "..." : "")
         );
         setTime(formatTime(message.created_At));
-        if ((message.sender !== user.id && current.id != id) && (message.sender !== id && current.id != user.id))
+        if (
+          message.sender !== user.id &&
+          current.id != id &&
+          message.sender !== id &&
+          current.id != user.id
+        )
           setUnread((prev) => prev + 1);
       }
     };

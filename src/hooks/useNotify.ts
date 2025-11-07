@@ -11,7 +11,7 @@ export default function useNotify() {
     sender,
     receiver,
     popup=false,
-    _id = Math.random().toString(36).substring(2, 15),
+    id = Math.random().toString(36).substring(2, 15),
   }: {
     title: string;
     description: string;
@@ -20,11 +20,8 @@ export default function useNotify() {
     sender?: string;
     receiver?: string;
     popup?: boolean;
-    _id?: string;
+    id?: string;
   }) {
-    console.log("Adding notification:", {
-      title,
-      description,});
     const newNotification = {
       title,
       description,
@@ -33,7 +30,7 @@ export default function useNotify() {
       sender,
       receiver,
       popup,
-      _id,
+      id,
     };
     notify((prev) => {
       return [...prev, newNotification];

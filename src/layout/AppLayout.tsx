@@ -15,6 +15,7 @@ export default function AppLayout() {
   const { user, setUser } = useContext(profileContext);
   const [loading, setLoading] = useState(false);
   const { notify } = useNotify();
+  const { addNotification } = useNotify();
   useEffect(() => {
     async function check() {
       setLoading(false);
@@ -42,9 +43,7 @@ export default function AppLayout() {
       setLoading(true);
     }
     check();
-    
   }, [navigate, setUser]);
-
 
   useEffect(() => {
     async function handle() {
@@ -75,7 +74,7 @@ export default function AppLayout() {
     <div className="bg-[#171717] text-[#e5e5e5] flex flex-row w-full h-[100%] overflow-y-hidden">
       {loading ? (
         <>
-        <StompSocket />
+          <StompSocket />
           <SideBar />
           <ChatArea />
         </>

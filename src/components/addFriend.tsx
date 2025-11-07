@@ -49,7 +49,7 @@ export function AddFriend() {
                 users.map((user: userInterface) => (
                   <Tab
                     key={user.id}
-                    _id={user.id}
+                    id={user.id}
                     username={user.username}
                     name={user.name}
                     profilePicture={user.profilePicture}
@@ -67,12 +67,12 @@ export function AddFriend() {
 }
 
 function Tab({
-  _id,
+  id,
   username,
   name,
   profilePicture,
 }: {
-  _id: string;
+  id: string;
   username: string;
   name?: string;
   profilePicture?: string;
@@ -81,6 +81,7 @@ function Tab({
   const { addNotification } = useNotify();
   function handle() {
     addNotification({
+      id: Math.random().toString(36).substring(7),
       title: "Friend Request Sent",
       type: "info",
       description: `You have sent a friend request to ${username}`,
@@ -88,7 +89,7 @@ function Tab({
     });
     user.sendMessage("/app/FriendReq", {
       sender: user.id,
-      receiver: _id,
+      receiver: id,
     });
   }
   return (

@@ -7,7 +7,7 @@ export default function ProfileProvider({
   children: React.ReactNode;
 }) {
   const [current, setCurrent] = useState<{
-    _id: string;
+    id: string;
     name: string;
     username: string;
     profilePicture: string;
@@ -15,7 +15,7 @@ export default function ProfileProvider({
     isGroup: boolean;
     members?: userInterface[];
   }>({
-    _id: "",
+    id: "",
     name: "",
     username: "",
     profilePicture: "",

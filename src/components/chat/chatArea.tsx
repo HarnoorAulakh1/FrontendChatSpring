@@ -16,6 +16,7 @@ import { GoSidebarCollapse } from "react-icons/go";
 
 import useNotify from "@/hooks/useNotify";
 import type { StompSubscription } from "node_modules/@stomp/stompjs/esm6/stomp-subscription";
+import { TypingLoader } from "@/lib/loader";
 
 export default function ChatArea() {
   const {
@@ -53,6 +54,8 @@ function Messaging({
 }) {
   const startRef = useRef<HTMLDivElement>(null);
   const { messages, setMessages } = useContext(messageContext);
+  const [length, setLength] = useState(0);
+  const [typingIndicator, setTypingIndicator] = useState(false);
   const { user, setUser } = useContext(profileContext);
   const { addNotification } = useNotify();
   const [file, setFile] = useState<File>();
@@ -77,16 +80,51 @@ function Messaging({
         setMessages((prev) => [...prev, message]);
     };
 
-    let sub=null;
+    function handleTyping(data: {
+      sender: string;
+      receiver: string;
+      description: string;
+    }) {
+      console.log("Typing event received:", data);
+      if (data.sender == id) {
+        if (data.description == "typing") setTypingIndicator(true);
+        else setTypingIndicator(false);
+      }
+    }
+
+    let sub = null,
+      sub1 = null;
     if (user.subscribe) {
       sub = user.subscribe("/user/topic/messages", handleNewMessage);
+      sub1 = user.subscribe("/user/topic/typing", handleTyping);
     }
     // socket.on("message_read",)
     return () => {
-      if (sub != null)
-      sub.unsubscribe();
+      if (sub != null) sub.unsubscribe();
+      if (sub1 != null) sub1.unsubscribe();
     };
   }, [setMessages, user.subscribe, user.id, id]);
+
+  useEffect(() => {
+    if (length == 1) {
+      user.sendMessage("/app/typing", {
+        sender: user.id,
+        receiver: id,
+        description: "typing",
+      });
+    }
+    const timeoutId = setTimeout(() => {
+      if (length > 0) {
+        user.sendMessage("/app/typing", {
+          sender: user.id,
+          receiver: id,
+          description: "stopped",
+        });
+        setLength(0);
+      }
+    }, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [length, id, user]);
 
   useEffect(() => {
     async function getMessages() {
@@ -218,6 +256,7 @@ function Messaging({
               receiver={message.receiverEm?.id}
             />
           ))}
+          {typingIndicator && <TypingLoader />}
           <div ref={startRef} className=" w-full h-4"></div>
         </div>
       </div>
@@ -242,6 +281,7 @@ function Messaging({
             <input
               name="content"
               type="text"
+              onChange={() => setLength((x) => x + 1)}
               className="flex-1 p-2 bg-gray-800 text-white rounded-xl outline-none"
               placeholder="Type a message..."
             />

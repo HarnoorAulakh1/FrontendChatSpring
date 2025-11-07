@@ -28,7 +28,6 @@ export default function useStompClient() {
 
   const subscribe = useCallback((destination: string, callback: any) => {
     setSubs((prev) => [...prev, { destination, callback }]);
-
     if (clientRef.current?.connected) {
       return clientRef.current.subscribe(destination, (message) =>
         callback(JSON.parse(message.body))
@@ -36,7 +35,12 @@ export default function useStompClient() {
     }
   }, []);
 
-  const onConnect = useCallback((stompClient: Client) => {
+  const onConnect = useCallback(() => {
+    console.log("✅ Connected");
+    setConnected(true)
+  }, []);
+
+  const onReconnect = useCallback((stompClient: Client) => {
     console.log("✅ Connected");
     setConnected(true)
     subs.forEach((sub) => {
@@ -54,7 +58,7 @@ export default function useStompClient() {
       webSocketFactory: () => socket,
     });
 
-    stompClient.onConnect = () => onConnect(stompClient);
+    stompClient.onConnect = () => onConnect();
 
     stompClient.onWebSocketClose = () => {
       console.log("❌ Connection lost");
@@ -68,7 +72,7 @@ export default function useStompClient() {
       console.log("🔌 Cleaning up...");
       if (!connected) stompClient.deactivate();
     };
-  }, [user.id, subs,onConnect]);
+  }, [user.id,onConnect]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null;
@@ -79,7 +83,7 @@ export default function useStompClient() {
           webSocketFactory: () =>
             new SockJS(`http://localhost:4000/ws?username=${user.id}`),
         });
-        clientRef.current.onConnect = () => onConnect(clientRef.current!);
+        clientRef.current.onConnect = () => onReconnect(clientRef.current!);
         clientRef.current.activate();
         if (clientRef.current.connected) {
           console.log("✅ Reconnected");

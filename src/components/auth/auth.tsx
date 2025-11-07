@@ -56,7 +56,7 @@ function Login({
           popup: true,
         });
         setUser({
-          _id: data._id,
+          id: data.id,
           username: data.username,
           email: data.email,
           name: data.name,
@@ -67,6 +67,7 @@ function Login({
       }
     } catch (err) {
       addNotification({
+        id:"3231131",
         title: "Login Failed",
         description:
           err instanceof Error ? err.message : "An unknown error occurred",
@@ -150,6 +151,13 @@ function Register({
   async function handle(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    formData.append("file", formData.get("profilePicture") as Blob);
+    formData.append("user", JSON.stringify({
+      username: formData.get("username") as string,
+      password: formData.get("password") as string,
+      email: formData.get("email") as string,
+      name: formData.get("name") as string,
+    }));
     setLoading(false);
     try {
       const reponse = await api.post("/auth/register", formData, {
@@ -158,8 +166,10 @@ function Register({
         },
       });
       const data = reponse.data;
+      console.log(reponse.data);
       if (reponse.status == 200) {
         addNotification({
+          id: "3231131",
           title: "Signup Successful",
           description: data.message,
           type: "success",

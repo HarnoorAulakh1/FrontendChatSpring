@@ -1,6 +1,6 @@
 import { IoMdNotificationsOff } from "react-icons/io";
 import { IoMdPersonAdd } from "react-icons/io";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useContext } from "react";
 import { profileContext } from "../contexts/profile";
 import { api } from "../lib/utils";
@@ -11,10 +11,9 @@ import { notificationContext } from "@/contexts/notification";
 export default function Notifications() {
   const { notifications, notify } = useContext(notificationContext);
   const [loading] = useState<boolean>(false);
-  console.log("Notifications:", notifications);
+  console.log(notifications);
   return (
     <div className="w-full flex flex-col p-2 items-center gap-4 overflow-y-scroll h-full">
-      <>
         {loading ? (
           <div className="w-full h-full flex justify-center items-center">
             <Loader />
@@ -24,8 +23,8 @@ export default function Notifications() {
             (notification: notificationInterface) =>
               notification != undefined && (
                 <Tab
-                  key={notification._id}
-                  _id={notification._id}
+                  key={notification.id}
+                  id={notification.id}
                   sender={notification.sender}
                   group={notification.group}
                   receiver={notification.receiver}
@@ -39,13 +38,12 @@ export default function Notifications() {
         ) : (
           <Empty />
         )}
-      </>
     </div>
   );
 }
 
 function Tab({
-  _id,
+  id,
   sender,
   receiver,
   group,
@@ -54,7 +52,7 @@ function Tab({
   type,
   notify,
 }: {
-  _id?: string;
+  id?: string;
   sender?: string;
   receiver?: string;
   group?: string;
@@ -67,17 +65,19 @@ function Tab({
   const { user } = useContext(profileContext);
   async function remove() {
     setVisible(false);
-    notify((x) => x.filter((item) => item._id !== _id));
-    if (sender && (receiver || group) && _id)
-      await api.delete("/notification/deleteNotification/" + _id);
+    notify((x) => x.filter((item) => item.id !== id));
+    if (sender && (receiver || group) && id)
+      await api.get("/notification/deleteNotification/" + id);
   }
   function handle(action: string) {
-    notify((x) => x.filter((item) => item._id !== _id));
+    console.log("Handling friend request:", { sender, receiver, action });
+    notify((x) => x.filter((item) => item.id !== id));
     setVisible(false);
     user.sendMessage("/app/FriendReqAction", {
-      sender,
-      receiver,
-      action,
+      id: id,
+      sender:user.id,
+      receiver: sender,
+      description: action,
     });
   }
   return (
@@ -90,7 +90,7 @@ function Tab({
               <span className="font-semibold">{title}</span>
               <span className="text-xs text-black/70">{description}</span>
             </div>
-            {type == "request" && (
+            {type == "friend_req" && (
               <div className="flex flex-row items-center gap-2">
                 <button
                   onClick={() => handle("accepted")}

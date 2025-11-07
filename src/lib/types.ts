@@ -34,7 +34,7 @@ export interface messageInterface {
 }
 
 export interface notificationInterface {
-  _id: string;
+  id: string;
   sender?: string;
   receiver?: string;
   group?: string;
@@ -46,7 +46,7 @@ export interface notificationInterface {
 }
 
 export interface groupInterface {
-  _id: string;
+  id: string;
   name: string;
   logo: string;
   members: string[];

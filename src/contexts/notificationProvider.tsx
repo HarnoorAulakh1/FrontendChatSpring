@@ -15,22 +15,22 @@ export default function NotificationProvider({
   const [notifications, notify] = useState<notificationInterface[]>([]);
   const { user } = useContext(profileContext);
   useEffect(() => {
-    const socket = user.socket;
-    if (!socket) return;
-
-    const handle = (data: {
-      sender: string;
-      notification: notificationInterface;
-    }) => {
-      notify((prev) => [...prev, data.notification]);
+    const handle = (data: notificationInterface) => {
+      console.log("New notification received:", data);
+      notify((prev) => [...prev, data]);
     };
+    let sub1 = null;
+    if (!user.subscribe) return;
+    sub1 = user.subscribe("/user/topic/notifications", handle);
 
     // socket.on("receive_friend_request", handle);
     // socket.on("friend_request_accepted", handle);
     // socket.on("receive_group_request", handle);
     // socket.on("group_request_accepted", handle);
-    return () => {};
-  }, [user.socket]);
+    return () => {
+      if (sub1 != null) sub1.unsubscribe();
+    };
+  }, [user.subscribe, user]);
 
   return (
     <notificationContext.Provider value={{ notifications, notify }}>
