@@ -1,3 +1,5 @@
+import type { StompSubscription } from "@stomp/stompjs";
+
 export interface userInterface {
   id: string;
   username: string;
@@ -7,8 +9,7 @@ export interface userInterface {
   profilePicture: string;
   isOnline: boolean;
   sendMessage?: (destination: string, body: any) => void;
-  subscribe?: (destination: string, callback: (body: any) => void) => void;
-  unsubscribe?: (destination: string) => void;
+  subscribe?: (destination: string, callback: (body: any) => void) => StompSubscription | undefined;
   disconnect?: () => void;
   collapse?: boolean;
 }

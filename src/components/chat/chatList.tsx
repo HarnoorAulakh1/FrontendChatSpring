@@ -7,9 +7,11 @@ import { useEffect, useState, useContext } from "react";
 import { api } from "@/lib/utils";
 import { profileContext } from "@/contexts/profile";
 import { formatTime } from "@/lib/utils";
+import type { StompSubscription } from "node_modules/@stomp/stompjs/esm6/stomp-subscription";
 
 import { currentContext } from "@/contexts/current";
-import Loading from "@/lib/loader";
+import Loading, { TypingLoaderSmall } from "@/lib/loader";
+import { messageContext } from "@/contexts/message";
 export default function ChatList({
   search,
   collapse,
@@ -19,6 +21,7 @@ export default function ChatList({
 }) {
   const [friends, setFriends] = useState<userInterface[]>([]);
   const [loading, setLoading] = useState(true);
+  const { setMessage } = useContext(messageContext);
   const [filteredFriends, setFilteredFriends] = useState<userInterface[]>([]);
   useEffect(() => {
     const filtered = friends.filter((user) =>
@@ -29,7 +32,6 @@ export default function ChatList({
   const { user } = useContext(profileContext);
   useEffect(() => {
     const add_friend = async (data: notificationInterface) => {
-      console.log("New friend notification received:", data);
       if (data.type != "friend_req_accepted") return;
       const response = await api.get("/user/getUserById/" + data.sender);
       if (response.status == 200) {
@@ -37,13 +39,19 @@ export default function ChatList({
         setFriends((prev) => [...prev, userData]);
       }
     };
+    const handleNewMessage = async (message: messageInterface) => {
+      setMessage(message);
+    };
     if (!user.subscribe) return;
-    let sub1 = null;
+    let sub1 = null,
+      sub2 = null;
     sub1 = user.subscribe("/user/topic/friendAccepted", add_friend);
+    sub2 = user.subscribe("/user/topic/messages", handleNewMessage);
     return () => {
       if (sub1 != null) sub1.unsubscribe();
+      if (sub2 != null) sub2.unsubscribe();
     };
-  }, [user.subscribe,user]);
+  }, [user.subscribe, user]);
   useEffect(() => {
     async function fetchFriends() {
       setLoading(true);
@@ -93,6 +101,8 @@ function ChatListItem({
   const { id, username, profilePicture, name } = user1;
   const { current, setCurrent } = useContext(currentContext);
   const [unread, setUnread] = useState<number>(0);
+  const [typingIndicator, setTypingIndicator] = useState<boolean>(false);
+  const { message } = useContext(messageContext);
   useEffect(() => {
     const handleOnlineStatus = (data: { sender: string }) => {
       if (data.sender == user1.id) {
@@ -104,42 +114,42 @@ function ChatListItem({
         setIsOnline(false);
       }
     };
-
-    const handleMessagePreview = (message: messageInterface) => {
-      if (message.sender == id || message.receiver == id) {
-        const content = message.content;
-        setPreview(
-          content.substring(0, 20) + (content.length > 20 ? "..." : "")
-        );
-        setTime(formatTime(message.created_At));
-        if (
-          message.sender !== user.id &&
-          current.id != id &&
-          message.sender !== id &&
-          current.id != user.id
-        )
-          setUnread((prev) => prev + 1);
+    function handleTyping(data: {
+      sender: string;
+      receiver: string;
+      description: string;
+    }) {
+      if (data.sender == id) {
+        if (data.description == "typing") setTypingIndicator(true);
+        else setTypingIndicator(false);
       }
-    };
-    if (!user.subscribe) return;
-    const sub1 = user.subscribe("/user/topic/connected", handleOnlineStatus);
-    const sub2 = user.subscribe(
-      "/user/topic/disconnected",
-      handleOfflineStatus
-    );
-    const sub3 = user.subscribe("/user/topic/preview", handleMessagePreview);
+    }
+    let sub1: StompSubscription | null | undefined,
+      sub2: StompSubscription | null | undefined,
+      sub4: StompSubscription | null | undefined;
+    if (user.subscribe) {
+      sub1 = user.subscribe("/user/topic/connected", handleOnlineStatus);
+      sub2 = user.subscribe("/user/topic/disconnected", handleOfflineStatus);
+      sub4 = user.subscribe("/user/topic/typing", handleTyping);
+    }
     return () => {
-      if (sub1 != null) {
-        sub1.unsubscribe();
-      }
-      if (sub2 != null) {
-        sub2.unsubscribe();
-      }
-      if (sub3 != null) {
-        sub3.unsubscribe();
-      }
+      if (sub1 != null) sub1.unsubscribe();
+      if (sub2 != null) sub2.unsubscribe();
+      if (sub4 != null) sub4.unsubscribe();
     };
-  }, [username, current.id, id, user.id, user.subscribe, user1.id]);
+  }, [username, id, user.id, user.subscribe, user1.id]);
+
+  useEffect(() => {
+    if (message.sender == id || message.receiver == id) {
+      const content = message.content;
+      setPreview(content.substring(0, 20) + (content.length > 20 ? "..." : ""));
+      setTime(formatTime(message.created_At));
+      //console.log("Current:", current.id, "ID:", id, "Message:", message,(message.sender!=user.id), id == message.receiver, current.id != id);
+      if (id == message.sender && current.id != id)
+        setUnread((prev) => prev + 1);
+    }
+  }, [message.created_At, current.id, id]);
+
   useEffect(() => {
     const fetchPreview = async () => {
       try {
@@ -171,7 +181,6 @@ function ChatListItem({
           const data = response.data;
           setIsOnline(data.isOnline);
         }
-        console.log("Online status data:", response.data);
       } catch (error) {
         console.error("Error checking online status:", error);
       }
@@ -183,7 +192,6 @@ function ChatListItem({
         );
         if (response.status == 200) {
           const data = response.data;
-          console.log("Unread count data:", data);
           if (data) {
             setUnread(data);
           }
@@ -253,7 +261,13 @@ function ChatListItem({
             </p>
           </div>
           <div className="flex flex-row justify-between w-full">
-            <span className="text-xs text-gray-400">{preview}</span>{" "}
+            <span className="text-xs text-gray-400">
+              {typingIndicator && current.id != id ? (
+                <TypingLoaderSmall />
+              ) : (
+                preview
+              )}
+            </span>
             {unread != 0 && (
               <div className="rounded-full w-5 h-5 text-center bg-green-500 text-black text-sm">
                 {unread}

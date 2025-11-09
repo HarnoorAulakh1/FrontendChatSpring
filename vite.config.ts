@@ -8,7 +8,8 @@ export default defineConfig({
   define: {
     global: "globalThis",
   },
-  plugins: [react(), tailwindcss(), nodePolyfills()],
+  
+  plugins: [react(), tailwindcss(), nodePolyfills() as any],
   optimizeDeps: {
     force: true,
     include: ["react-head", "sockjs-client", "@stomp/stompjs"],

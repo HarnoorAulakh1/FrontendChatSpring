@@ -1,6 +1,6 @@
 import { IoMdNotificationsOff } from "react-icons/io";
 import { IoMdPersonAdd } from "react-icons/io";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useContext } from "react";
 import { profileContext } from "../contexts/profile";
 import { api } from "../lib/utils";
@@ -11,7 +11,6 @@ import { notificationContext } from "@/contexts/notification";
 export default function Notifications() {
   const { notifications, notify } = useContext(notificationContext);
   const [loading] = useState<boolean>(false);
-  console.log(notifications);
   return (
     <div className="w-full flex flex-col p-2 items-center gap-4 overflow-y-scroll h-full">
         {loading ? (
@@ -70,9 +69,9 @@ function Tab({
       await api.get("/notification/deleteNotification/" + id);
   }
   function handle(action: string) {
-    console.log("Handling friend request:", { sender, receiver, action });
     notify((x) => x.filter((item) => item.id !== id));
     setVisible(false);
+    if( user.sendMessage)
     user.sendMessage("/app/FriendReqAction", {
       id: id,
       sender:user.id,

@@ -36,6 +36,7 @@ createRoot(document.getElementById("root")!).render(
       content="https://xchat.example.com/twitter-image.png"
     />
 
+
     <App />
   </HeadProvider>
 );

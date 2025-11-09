@@ -10,10 +10,9 @@ export function AddFriend() {
   const [users, setUsers] = useState([]);
   useEffect(() => {
     async function getUsers() {
-      console.log("Fetching users for:", username);
+
       try {
         const response = await api.get("/user/getUsers/" + username);
-        console.log("Response:", response);
         if (response.status === 200) setUsers(response.data);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -87,6 +86,7 @@ function Tab({
       description: `You have sent a friend request to ${username}`,
       popup: true,
     });
+    if(user.sendMessage)
     user.sendMessage("/app/FriendReq", {
       sender: user.id,
       receiver: id,

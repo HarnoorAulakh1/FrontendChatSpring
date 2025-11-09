@@ -3,7 +3,7 @@ import { IoIosCall } from "react-icons/io";
 import { FaVideo } from "react-icons/fa6";
 import { FaPlus } from "react-icons/fa6";
 import { useContext, useEffect, useRef, useState } from "react";
-import { messageContext } from "../../contexts/messages";
+import { messageContext } from "../../contexts/message";
 import { currentContext } from "@/contexts/current";
 import Landing from "./landing";
 import { profileContext } from "@/contexts/profile";
@@ -13,8 +13,6 @@ import { api } from "@/lib/utils";
 import { FaFileAlt } from "react-icons/fa";
 import { IoCheckmarkDoneOutline } from "react-icons/io5";
 import { GoSidebarCollapse } from "react-icons/go";
-
-import useNotify from "@/hooks/useNotify";
 import type { StompSubscription } from "node_modules/@stomp/stompjs/esm6/stomp-subscription";
 import { TypingLoader } from "@/lib/loader";
 
@@ -53,11 +51,11 @@ function Messaging({
   isGroup?: boolean;
 }) {
   const startRef = useRef<HTMLDivElement>(null);
-  const { messages, setMessages } = useContext(messageContext);
+  const  [messages, setMessages ] = useState<messageInterface[]>([]);
   const [length, setLength] = useState(0);
   const [typingIndicator, setTypingIndicator] = useState(false);
   const { user, setUser } = useContext(profileContext);
-  const { addNotification } = useNotify();
+  const {setMessage} = useContext(messageContext);
   const [file, setFile] = useState<File>();
   useEffect(() => {
     setTimeout(() => {
@@ -67,17 +65,16 @@ function Messaging({
   }, [messages]);
   useEffect(() => {
     const handleNewMessage = async (message: messageInterface) => {
-      console.log("New message received:", message);
       try {
-        const response = await api.post(
+         await api.post(
           `/message/markAsRead?sender=${user.id}&receiver=${id}&readBy=${user.id}&time=${message.created_At}`
         );
-        console.log("Marked messages as read:", response.data);
       } catch (error) {
         console.error("Error marking messages as read:", error);
       }
-      if (message.sender == id && message.receiver == user.id)
+      if (message.sender == id && message.receiver == user.id){
         setMessages((prev) => [...prev, message]);
+      }
     };
 
     function handleTyping(data: {
@@ -85,7 +82,6 @@ function Messaging({
       receiver: string;
       description: string;
     }) {
-      console.log("Typing event received:", data);
       if (data.sender == id) {
         if (data.description == "typing") setTypingIndicator(true);
         else setTypingIndicator(false);
@@ -106,7 +102,7 @@ function Messaging({
   }, [setMessages, user.subscribe, user.id, id]);
 
   useEffect(() => {
-    if (length == 1) {
+    if (length == 1 && user.sendMessage) {
       user.sendMessage("/app/typing", {
         sender: user.id,
         receiver: id,
@@ -114,7 +110,7 @@ function Messaging({
       });
     }
     const timeoutId = setTimeout(() => {
-      if (length > 0) {
+      if (length > 0 && user.sendMessage) {
         user.sendMessage("/app/typing", {
           sender: user.id,
           receiver: id,
@@ -124,7 +120,7 @@ function Messaging({
       }
     }, 2000);
     return () => clearTimeout(timeoutId);
-  }, [length, id, user]);
+  }, [length, id, user,user.sendMessage]);
 
   useEffect(() => {
     async function getMessages() {
@@ -184,24 +180,16 @@ function Messaging({
       };
       form.append("file", file);
     }
+    //console.log("New Message preview:", newMessage);
+    setMessage({...newMessage, created_At: new Date().toISOString()});
     form.append("message", JSON.stringify(newMessage1));
-    console.log("Sending message:", newMessage1);
-
-    const response = await api.post("/message/send", form, {
+    setFile({} as File);
+    await api.post("/message/send", form, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
-    if (response.status !== 200) {
-      addNotification({
-        title: "Failed to send message",
-        description: "There was an error sending your message.",
-        type: "error",
-      });
-      return;
-    }
     setMessages((x) => [...x, newMessage]);
-    setFile({} as File);
   }
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -330,12 +318,11 @@ function Message({
       receiver: string;
       time: string;
     }) => {
-      console.log("Message read event received:", data);
       if (new Date(data.time).toISOString() >= new Date(time).toISOString()) {
         setRead(true);
       }
     };
-    let sub1: StompSubscription | null;
+    let sub1: StompSubscription | null | undefined;
     if (!isRead && user.subscribe)
       sub1 = user.subscribe("/user/topic/markAsRead", handleMessageRead);
     return () => {

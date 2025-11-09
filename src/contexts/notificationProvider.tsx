@@ -16,7 +16,6 @@ export default function NotificationProvider({
   const { user } = useContext(profileContext);
   useEffect(() => {
     const handle = (data: notificationInterface) => {
-      console.log("New notification received:", data);
       notify((prev) => [...prev, data]);
     };
     let sub1 = null;

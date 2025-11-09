@@ -61,7 +61,7 @@ function Login({
           email: data.email,
           name: data.name,
           profilePicture: data.profilePicture,
-          isOnline: data.isOnline,
+          isOnline: data.isOnline
         });
         navigate("/app");
       }
@@ -166,7 +166,6 @@ function Register({
         },
       });
       const data = reponse.data;
-      console.log(reponse.data);
       if (reponse.status == 200) {
         addNotification({
           id: "3231131",

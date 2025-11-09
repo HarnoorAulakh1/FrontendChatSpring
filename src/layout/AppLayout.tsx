@@ -15,7 +15,6 @@ export default function AppLayout() {
   const { user, setUser } = useContext(profileContext);
   const [loading, setLoading] = useState(false);
   const { notify } = useNotify();
-  const { addNotification } = useNotify();
   useEffect(() => {
     async function check() {
       setLoading(false);
@@ -51,7 +50,6 @@ export default function AppLayout() {
         const response = await api.get(
           "/notification/getNotifications/" + user.id
         );
-        console.log(response.data);
         if (response.status == 200) {
           let data = response.data;
           data = data.map((notification: notificationInterface) => {

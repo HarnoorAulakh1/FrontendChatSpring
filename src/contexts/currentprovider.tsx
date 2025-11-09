@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { currentContext } from "./current";
 import type { userInterface } from "@/lib/types";
-export default function ProfileProvider({
+export default function CurrentProvider({
   children,
 }: {
   children: React.ReactNode;

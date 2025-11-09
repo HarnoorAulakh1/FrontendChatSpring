@@ -12,7 +12,6 @@ export default function AddGroup() {
   const [checked, setChecked] = useState<string[]>([]);
   useEffect(() => {
     async function getUsers() {
-      console.log("Fetching users for:", username);
       try {
         const response = await api.get("/user/getUsers/" + username);
         if (response.status === 200) setUsers(response.data);
@@ -45,12 +44,10 @@ export default function AddGroup() {
     }
     const response = await api.post("/group/createGroup", {
       name:groupName,
-      admin: user._id,
+      admin: user.id,
       members: checked,
     });
     if (response.status === 200) {
-      const data = response.data;
-      console.log("Group created successfully:", data);
       addNotification({
         title: "Group Created",
         description: `Group "${groupName}" created successfully.`,
@@ -96,13 +93,13 @@ export default function AddGroup() {
                 {users.length > 0 ? (
                   users.map((user: userInterface) => (
                     <Tab
-                      key={user._id}
-                      _id={user._id}
+                      key={user.id}
+                      _id={user.id}
                       username={user.username}
                       name={user.name}
                       profilePicture={user.profilePicture}
                       setChecked={setChecked}
-                      checked={checked.includes(user._id)}
+                      checked={checked.includes(user.id)}
                     />
                   ))
                 ) : (

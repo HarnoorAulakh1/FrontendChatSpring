@@ -10,8 +10,6 @@ import Notifications from "./notifications";
 import { CiLogout } from "react-icons/ci";
 import { api } from "@/lib/utils";
 import { useNavigate } from "react-router";
-import { MdOutlineGroups } from "react-icons/md";
-import AddGroup from "./chat/addGroup";
 import { profileContext } from "@/contexts/profile";
 
 export default function SideBar() {
@@ -21,6 +19,7 @@ export default function SideBar() {
   const { user, setUser } = useContext(profileContext);
 
   async function logout() {
+    if(user.disconnect)
     user.disconnect();
     await api.get("/auth/logout");
     navigate("/");
@@ -53,7 +52,7 @@ export default function SideBar() {
                   >
                     <CiLogout className="text-xl text-[#e5e5e5]" />
                   </button>
-                  <Popup
+                  {/* <Popup
                     width="80%"
                     height="70%"
                     title="Create Group"
@@ -64,7 +63,7 @@ export default function SideBar() {
                     }
                   >
                     <AddGroup />
-                  </Popup>
+                  </Popup> */}
                   <Popup
                     title="Add Friend"
                     trigger={
@@ -141,7 +140,7 @@ export default function SideBar() {
                   >
                     <CiLogout className="text-xl text-[#e5e5e5]" />
                   </button>
-                  <Popup
+                  {/* <Popup
                     width="40%"
                     height="80%"
                     title="Create Group"
@@ -152,7 +151,7 @@ export default function SideBar() {
                     }
                   >
                     <AddGroup />
-                  </Popup>
+                  </Popup> */}
                   <Popup
                     title="Add Friend"
                     trigger={

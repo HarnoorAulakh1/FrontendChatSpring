@@ -18,3 +18,16 @@ export function TypingLoader() {
     </div>
   );
 }
+
+export function TypingLoaderSmall() {
+  return (
+    <div
+      className={`flex flex-row items-center gap-1 rounded-lg max-w-xs`}
+    >
+      <p>typing</p>
+        <div className="w-1 h-1 bg-gray-500 rounded-full animate-bounce delay-75"></div>
+        <div className="w-1 h-1 bg-gray-500 rounded-full animate-bounce delay-150"></div>
+        <div className="w-1 h-1 bg-gray-500 rounded-full animate-bounce delay-225"></div>
+    </div>
+  );
+}
