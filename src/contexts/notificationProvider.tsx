@@ -6,6 +6,7 @@ import { IoMdPersonAdd } from "react-icons/io";
 import type { notificationInterface } from "../lib/types";
 import { profileContext } from "./profile";
 import { useContext } from "react";
+import type { StompSubscription } from "@stomp/stompjs";
 
 export default function NotificationProvider({
   children,
@@ -18,8 +19,8 @@ export default function NotificationProvider({
     const handle = (data: notificationInterface) => {
       notify((prev) => [...prev, data]);
     };
-    let sub1 = null;
-    if (!user.subscribe) return;
+    let sub1: StompSubscription | null | undefined;
+    if (user.subscribe)
     sub1 = user.subscribe("/user/topic/notifications", handle);
 
     // socket.on("receive_friend_request", handle);
@@ -27,7 +28,9 @@ export default function NotificationProvider({
     // socket.on("receive_group_request", handle);
     // socket.on("group_request_accepted", handle);
     return () => {
-      if (sub1 != null) sub1.unsubscribe();
+      if (sub1) {
+        console.log("Unsubscribing from notifications",sub1);
+        sub1.unsubscribe();}
     };
   }, [user.subscribe, user]);
 

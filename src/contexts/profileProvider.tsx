@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { profileContext } from "./profile";
 import type { userInterface } from "../lib/types";
-import type { StompSubscription } from "@stomp/stompjs";
 export default function ProfileProvider({
   children,
 }: {
@@ -15,9 +14,7 @@ export default function ProfileProvider({
     profilePicture: "",
     isOnline: false,
     sendMessage: () => {},
-    subscribe: () => {
-      return {} as StompSubscription | undefined;
-    },
+    subscribe: () => null,
     disconnect: () => {},
     collapse: false,       
 

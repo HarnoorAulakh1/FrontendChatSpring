@@ -13,7 +13,7 @@ export const profileContext = createContext<{
     profilePicture: string;
     isOnline: boolean;
     sendMessage?: (destination: string, body: any) => void;
-    subscribe?: (destination: string, callback: (body: any) => void) => StompSubscription | undefined;
+    subscribe?: (destination: string, callback: (body: any) => void) => StompSubscription | null;
     disconnect?: () => void;
     collapse?: boolean;
   };

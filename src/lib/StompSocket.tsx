@@ -32,15 +32,22 @@ export default function useStompClient() {
     clientRef.current?.deactivate();
   }, []);
 
-  const subscribe = useCallback((destination: string, callback: any) => {
-    if (clientRef.current?.connected) {
-      const subId = clientRef.current.subscribe(destination, (message) =>
-        callback(JSON.parse(message.body))
-      );
-      setSubs((prev) => [...prev, { destination, callback, subId }]);
-      return subId;
-    }
-  }, []);
+  const subscribe = useCallback(
+    (
+      destination: string,
+      callback: (body: any) => void
+    ): StompSubscription | null => {
+      if (clientRef.current?.connected) {
+        const sub = clientRef.current.subscribe(destination, (message) =>
+          callback(JSON.parse(message.body))
+        );
+        setSubs((prev) => [...prev, { destination, callback, subId: sub }]);
+        return sub;
+      }
+      return null;
+    },
+    []
+  );
 
   const onConnect = useCallback(() => {
     //console.log("✅ Connected");
@@ -146,8 +153,8 @@ export default function useStompClient() {
     setUser((x) => ({
       ...x,
       sendMessage,
-      subscribe,
       disconnect,
+      subscribe,
     }));
   }, [sendMessage, subscribe, disconnect, setUser, connected]);
 
