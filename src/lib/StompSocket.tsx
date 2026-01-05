@@ -3,6 +3,8 @@ import { Client, type StompSubscription } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { profileContext } from "@/contexts/profile";
 import { useCallback } from "react";
+import Cookies from  "js-cookie";
+
 
 export default function useStompClient() {
   const [subs, setSubs] = useState<
@@ -12,6 +14,7 @@ export default function useStompClient() {
       subId: StompSubscription;
     }[]
   >([]);
+  const token=Cookies.get("JWT_TOKEN");
   const { user, setUser } = useContext(profileContext);
   const connectingRef = useRef(false);
   const [connected, setConnected] = useState(false);
@@ -67,8 +70,7 @@ export default function useStompClient() {
 
   useEffect(() => {
     if (connected) return;
-    const socket = new SockJS(`http://localhost:4000/ws?username=${user.id}`);
-
+    const socket = new SockJS(`http://localhost:4000/ws?username=${user.id}&token=${token}`);
     const stompClient = new Client({
       webSocketFactory: () => socket,
     });
@@ -88,7 +90,7 @@ export default function useStompClient() {
       //console.log("🔌 Cleaning up...");
       if (!connected) stompClient.deactivate();
     };
-  }, [user.id, onConnect]);
+  }, [user.id, onConnect,Cookies]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;

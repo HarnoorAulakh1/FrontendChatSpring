@@ -105,6 +105,7 @@ function ChatListItem({
   const { message } = useContext(messageContext);
   useEffect(() => {
     const handleOnlineStatus = (data: { sender: string }) => {
+      console.log("Online status update received for:", data.sender);
       if (data.sender == user1.id) {
         setIsOnline(true);
       }

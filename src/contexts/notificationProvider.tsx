@@ -29,10 +29,9 @@ export default function NotificationProvider({
     // socket.on("group_request_accepted", handle);
     return () => {
       if (sub1) {
-        console.log("Unsubscribing from notifications",sub1);
         sub1.unsubscribe();}
     };
-  }, [user.subscribe, user]);
+  }, [user.subscribe,user]);
 
   return (
     <notificationContext.Provider value={{ notifications, notify }}>
