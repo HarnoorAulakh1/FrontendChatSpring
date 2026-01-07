@@ -18,6 +18,7 @@ export interface messageInterface {
   id?: string;
   sender: string;
   receiver:string;
+  roomId?: string;
   senderEm?: userInterface;
   receiverEm?: userInterface;
   file?:{
@@ -32,6 +33,11 @@ export interface messageInterface {
     user: string;
     readAt: Date;
   }[];
+}
+
+export interface roomMember {
+  id: string;
+  username: string;
 }
 
 export interface notificationInterface {

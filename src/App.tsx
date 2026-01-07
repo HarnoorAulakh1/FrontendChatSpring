@@ -1,12 +1,14 @@
 import ProfileProvider from "./contexts/profileProvider";
 import AppLayout from "./layout/AppLayout";
-import CurrentProvider from "./contexts/currentprovider";
 import UiProvider from "./contexts/notificationProvider";
 import Auth from "./components/auth/auth";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import NotificationProvider from "./contexts/notificationProvider";
 import MessageProvider from "./contexts/messageProvider";
-
+import {CreateRoom,JoinRoom} from "./components/room/createRoom";
+import CurrentProvider from './contexts/currentProvider';
+import RoomLayout from "./components/room/RoomLayout";
+import RoomChat from "./components/room/roomChat";
 function App() {
   const router = createBrowserRouter([
     // {
@@ -20,6 +22,24 @@ function App() {
     {
       path: "/",
       element: <Auth />,
+    },
+    {
+      path: "/room",
+      element: <RoomLayout />,
+      children: [
+        {
+          path: "",
+          element:<JoinRoom/>
+        },
+        {
+          path:"chat",
+          element:<RoomChat/>
+        },
+        {
+          path: "create",
+          element:<CreateRoom/>
+        }
+      ],
     },
   ]);
   return (

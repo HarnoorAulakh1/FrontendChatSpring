@@ -20,8 +20,9 @@ export default function NotificationProvider({
       notify((prev) => [...prev, data]);
     };
     let sub1: StompSubscription | null | undefined;
-    if (user.subscribe)
-    sub1 = user.subscribe("/user/topic/notifications", handle);
+    if (user.subscribe){
+      console.log("Subscribing to notification topic");
+    sub1 = user.subscribe("/user/topic/notifications", handle);}
 
     // socket.on("receive_friend_request", handle);
     // socket.on("friend_request_accepted", handle);

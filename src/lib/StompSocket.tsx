@@ -14,7 +14,7 @@ export default function useStompClient() {
       subId: StompSubscription;
     }[]
   >([]);
-  const token=Cookies.get("JWT_TOKEN");
+  //const token=Cookies.get("JWT_TOKEN");
   const { user, setUser } = useContext(profileContext);
   const connectingRef = useRef(false);
   const [connected, setConnected] = useState(false);
@@ -70,7 +70,7 @@ export default function useStompClient() {
 
   useEffect(() => {
     if (connected) return;
-    const socket = new SockJS(`http://localhost:4000/ws?username=${user.id}&token=${token}`);
+    const socket = new SockJS(`http://localhost:4000/ws`);
     const stompClient = new Client({
       webSocketFactory: () => socket,
     });
@@ -117,7 +117,7 @@ export default function useStompClient() {
         }
         const client = new Client({
           webSocketFactory: () =>
-            new SockJS(`http://localhost:4000/ws?username=${user.id}`),
+            new SockJS(`http://localhost:4000/ws`),
         });
 
         // If connected successfully
