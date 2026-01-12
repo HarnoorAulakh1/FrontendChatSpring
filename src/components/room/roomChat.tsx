@@ -183,6 +183,7 @@ export default function RoomChat() {
   }
   return (
     <div className="fixed  w-full h-full z-20">
+        <StompSocket />
       <div className="w-full h-full flex flex-col">
         <div className="flex flex-row items-center gap-2 p-3 ">
           <h1 className="text-[#e5e5e5]  font-bold">Xchat</h1>
