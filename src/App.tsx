@@ -5,10 +5,11 @@ import Auth from "./components/auth/auth";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import NotificationProvider from "./contexts/notificationProvider";
 import MessageProvider from "./contexts/messageProvider";
-import {CreateRoom,JoinRoom} from "./components/room/createRoom";
-import CurrentProvider from './contexts/currentProvider';
+import { CreateRoom, JoinRoom } from "./components/room/createRoom";
+import CurrentProvider from "./contexts/currentProvider";
 import RoomLayout from "./components/room/RoomLayout";
 import RoomChat from "./components/room/roomChat";
+import WebrtcProvider from "./contexts/webrtcProvider";
 function App() {
   const router = createBrowserRouter([
     // {
@@ -29,16 +30,16 @@ function App() {
       children: [
         {
           path: "",
-          element:<JoinRoom/>
+          element: <JoinRoom />,
         },
         {
-          path:"chat",
-          element:<RoomChat/>
+          path: "chat",
+          element: <RoomChat />,
         },
         {
           path: "create",
-          element:<CreateRoom/>
-        }
+          element: <CreateRoom />,
+        },
       ],
     },
   ]);
@@ -49,7 +50,9 @@ function App() {
           <NotificationProvider>
             <CurrentProvider>
               <MessageProvider>
-                <RouterProvider router={router} />
+                <WebrtcProvider>
+                  <RouterProvider router={router} />
+                </WebrtcProvider>
               </MessageProvider>
             </CurrentProvider>
           </NotificationProvider>

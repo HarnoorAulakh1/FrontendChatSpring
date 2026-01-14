@@ -6,6 +6,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { messageContext } from "../../contexts/message";
 import { currentContext } from "@/contexts/current";
 import Landing from "./landing";
+import { IoMic } from "react-icons/io5";
 import { profileContext } from "@/contexts/profile";
 import type { messageInterface } from "@/lib/types";
 import { formatTime } from "@/lib/utils";
@@ -51,12 +52,229 @@ function Messaging({
   isGroup?: boolean;
 }) {
   const startRef = useRef<HTMLDivElement>(null);
-  const  [messages, setMessages ] = useState<messageInterface[]>([]);
+  const [messages, setMessages] = useState<messageInterface[]>([]);
   const [length, setLength] = useState(0);
   const [typingIndicator, setTypingIndicator] = useState(false);
   const { user, setUser } = useContext(profileContext);
-  const {setMessage} = useContext(messageContext);
+  const { setMessage } = useContext(messageContext);
   const [file, setFile] = useState<File>();
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const localRef = useRef<HTMLVideoElement>(null);
+  const remoteRef = useRef<HTMLVideoElement>(null);
+  const remoteStreamRef = useRef(new MediaStream());
+  const playedRef = useRef(false);
+
+  function handleUserGesture() {
+    console.log("User gesture detected");
+    // Try to play remote video now
+    if (remoteRef.current) remoteRef.current.muted = !remoteRef.current.muted;
+    //remoteRef.current?.play().catch(() => {});
+  }
+
+  async function createOffer() {
+    console.log("Creating offer to", id);
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    });
+
+    pc.oniceconnectionstatechange = () => {
+      console.log("ICE Connection State:", pc.iceConnectionState);
+    };
+    pc.onsignalingstatechange = () => {
+      console.log("Signaling State:", pc.signalingState);
+    };
+
+    pc.ontrack = (event) => {
+      const track = event.track;
+      console.log("Received remote track:", event);
+
+      if (!remoteStreamRef.current.getTracks().some((t) => t.id === track.id)) {
+        remoteStreamRef.current.addTrack(track);
+      }
+
+      if (remoteRef.current && !remoteRef.current.srcObject) {
+        remoteRef.current.srcObject = remoteStreamRef.current;
+      }
+
+      if (!playedRef.current && remoteRef.current) {
+        remoteRef.current.play().catch(() => {});
+        playedRef.current = true;
+      }
+    };
+
+    pcRef.current = pc;
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        if (user.sendMessage)
+          user.sendMessage("/app/signal/ice", {
+            candidate: event.candidate,
+            receiver: id,
+            sender: user.id,
+          });
+      }
+    };
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+    localRef.current!.srcObject = stream;
+    stream.getTracks().forEach((track) => {
+      pc.addTrack(track, stream);
+    });
+    const offer = await pc.createOffer({
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: true,
+    });
+    await pc.setLocalDescription(offer);
+    if (user.sendMessage)
+      user.sendMessage("/app/signal/offer", {
+        sdp: offer.sdp,
+        type: offer.type,
+        receiver: id,
+        sender: user.id,
+      });
+  }
+
+  useEffect(() => {
+    let sub1: StompSubscription | null = null;
+    if (user.subscribe) {
+      //console.log("Subscribed to Offer event:");
+      sub1 = user.subscribe("/user/topic/offer", async (data) => {
+        const pc = new RTCPeerConnection({
+          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        localRef.current!.srcObject = stream;
+
+        pc.oniceconnectionstatechange = () => {
+          console.log("ICE Connection State:", pc.iceConnectionState);
+        };
+        pc.onsignalingstatechange = () => {
+          console.log("Signaling State:", pc.signalingState);
+        };
+
+        pc.ontrack = (event) => {
+          console.log("Received remote track:", event);
+
+          const track = event.track;
+
+          if (
+            !remoteStreamRef.current.getTracks().some((t) => t.id === track.id)
+          ) {
+            remoteStreamRef.current.addTrack(track);
+          }
+
+          if (remoteRef.current && !remoteRef.current.srcObject) {
+            remoteRef.current.srcObject = remoteStreamRef.current;
+          }
+
+          if (!playedRef.current && remoteRef.current) {
+            remoteRef.current.play().catch(() => {});
+            playedRef.current = true;
+          }
+        };
+
+        pcRef.current = pc;
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            if (user.sendMessage)
+              user.sendMessage("/app/signal/ice", {
+                candidate: event.candidate,
+                sender: user.id,
+                receiver: data.sender,
+              });
+          }
+        };
+
+        await pc.setRemoteDescription(
+          new RTCSessionDescription({
+            sdp: data.sdp,
+            type: data.type,
+          })
+        );
+
+        stream.getTracks().forEach((track) => {
+          pc.addTrack(track, stream);
+        });
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        if (user.sendMessage)
+          user.sendMessage("/app/signal/answer", {
+            sdp: answer.sdp,
+            type: answer.type,
+            receiver: data.sender,
+            sender: user.id,
+          });
+      });
+    }
+
+    return () => {
+      if (sub1 != null) {
+        sub1.unsubscribe();
+      }
+    };
+  }, [id, user.subscribe, user.sendMessage, user.id, user]);
+
+  useEffect(() => {
+    let sub2: StompSubscription | null = null,
+      sub1: StompSubscription | null = null;
+    if (user.subscribe) {
+      sub2 = user.subscribe("/user/topic/answer", async (data1) => {
+        console.log("received answer");
+        if (pcRef.current) {
+          pcRef.current.setRemoteDescription(
+            new RTCSessionDescription({
+              sdp: data1.sdp,
+              type: data1.type,
+            })
+          );
+        }
+      });
+      sub1 = user.subscribe("/user/topic/ice", async (data1) => {
+        try {
+          if (!data1.candidate) return;
+          console.log("Raw candidate received:", data1.candidate);
+
+          const candidateInit: RTCIceCandidateInit = {
+            candidate: data1.candidate.candidate,
+            sdpMid: data1.candidate.sdpMid ?? null,
+            sdpMLineIndex: data1.candidate.sdpMLineIndex ?? null,
+            usernameFragment: data1.candidate.usernameFragment ?? undefined,
+          };
+          console.log("Parsed candidate:", candidateInit);
+          if (
+            candidateInit.candidate != null &&
+            candidateInit.sdpMid != null &&
+            candidateInit.sdpMLineIndex != null &&
+            candidateInit.usernameFragment != null
+          ) {
+            const candidate = new RTCIceCandidate(candidateInit);
+            console.log("Received ICE candidate:", candidate);
+
+            if (pcRef.current) {
+              await pcRef.current.addIceCandidate(candidate);
+              console.log("Added ICE candidate successfully");
+            }
+          }
+        } catch (err) {
+          console.error("Error adding ICE candidate:", err);
+        }
+      });
+    }
+    return () => {
+      if (sub2 != null) {
+        sub2.unsubscribe();
+      }
+      if (sub1 != null) {
+        sub1.unsubscribe();
+      }
+    };
+  }, [user.subscribe, user]);
+
   useEffect(() => {
     setTimeout(() => {
       if (startRef.current)
@@ -66,13 +284,13 @@ function Messaging({
   useEffect(() => {
     const handleNewMessage = async (message: messageInterface) => {
       try {
-         await api.post(
+        await api.post(
           `/message/markAsRead?sender=${user.id}&receiver=${id}&readBy=${user.id}&time=${message.created_At}`
         );
       } catch (error) {
         console.error("Error marking messages as read:", error);
       }
-      if (message.sender == id && message.receiver == user.id){
+      if (message.sender == id && message.receiver == user.id) {
         setMessages((prev) => [...prev, message]);
       }
     };
@@ -120,13 +338,13 @@ function Messaging({
       }
     }, 2000);
     return () => clearTimeout(timeoutId);
-  }, [length, id, user,user.sendMessage]);
+  }, [length, id, user, user.sendMessage]);
 
   useEffect(() => {
     async function getMessages() {
       try {
         const response = await api.get(
-          `/message/getMessages?sender=${user.id}&receiver=${id}`
+          `/message/getMessages?sender=${user.id}&receiver=${id}&roomId=`
         );
         if (response.status === 200) {
           const data = response.data;
@@ -181,7 +399,7 @@ function Messaging({
       form.append("file", file);
     }
     //console.log("New Message preview:", newMessage);
-    setMessage({...newMessage, created_At: new Date().toISOString()});
+    setMessage({ ...newMessage, created_At: new Date().toISOString() });
     form.append("message", JSON.stringify(newMessage1));
     setFile({} as File);
     await api.post("/message/send", form, {
@@ -201,6 +419,25 @@ function Messaging({
   }
   return (
     <div className="w-full h-full flex flex-col">
+      <div className="flex flex-col gap-4">
+        <h1 className="text-2xl"> Video stream</h1>
+        <div className="flex flex-row justify-center gap-2 rounded-2xl w-[30%] h-[50%] z-20 absolute">
+          <video
+            ref={localRef}
+            autoPlay
+            playsInline
+            muted
+            style={{ width: "400px", borderRadius: "12px", height: "300px" }}
+          />
+          <video
+            ref={remoteRef}
+            playsInline
+            muted
+            style={{ width: "400px", borderRadius: "12px", height: "300px" }}
+          />
+        </div>
+      </div>
+
       <div className="flex flex-row items-center gap-2 p-3 ">
         <button
           onClick={() => setUser((x) => ({ ...x, collapse: !x.collapse }))}
@@ -226,8 +463,17 @@ function Messaging({
           <button className="p-2 rounded-xl hover:bg-gray-700">
             <IoIosCall className="text-xl" />
           </button>
-          <button className="p-2 rounded-xl hover:bg-gray-700">
+          <button
+            onClick={createOffer}
+            className="p-2 rounded-xl hover:bg-gray-700"
+          >
             <FaVideo className="text-xl" />
+          </button>
+          <button
+            onClick={handleUserGesture}
+            className="p-2 rounded-xl hover:bg-gray-700"
+          >
+            <IoMic className="text-xl" />
           </button>
         </div>
       </div>
@@ -308,7 +554,6 @@ function Message({
 }) {
   const { user } = useContext(profileContext);
   const [time1] = useState<string>(formatTime(time));
-  const { current } = useContext(currentContext);
   const [isRead, setRead] = useState(
     readBy && readBy.length > 0 && readBy.some((read) => read.user === receiver)
   );
@@ -328,7 +573,7 @@ function Message({
     return () => {
       if (sub1 != null) sub1.unsubscribe();
     };
-  }, [user.subscribe, user.id, time, receiver, isRead]);
+  }, [user.subscribe, user.id, time, receiver, isRead, user]);
   return (
     <div
       className={`flex flex-col  items-center ${
@@ -381,9 +626,7 @@ function Message({
         {isSender && (
           <div className="flex flex-row  gap-0">
             <IoCheckmarkDoneOutline
-              className={` ${
-                isRead && !current.isGroup ? "text-blue-400" : "text-gray-400"
-              }`}
+              className={` ${isRead ? "text-blue-400" : "text-gray-400"}`}
             />
           </div>
         )}
