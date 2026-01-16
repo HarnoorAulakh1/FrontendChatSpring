@@ -9,24 +9,49 @@ export interface userInterface {
   profilePicture: string;
   isOnline: boolean;
   sendMessage?: (destination: string, body: any) => void;
-  subscribe?: (destination: string, callback: (body: any) => void) => StompSubscription | null;
+  subscribe?: (
+    destination: string,
+    callback: (body: any) => void
+  ) => StompSubscription | null;
   disconnect?: () => void;
   collapse?: boolean;
+}
+
+export interface callInterface {
+  sender: string;
+  receiver: string;
+  status: "accepted" | "declined" | "busy" | "calling";
+}
+
+export interface iceInterface {
+  candidate: {
+    candidate: string;
+    sdpMid: string | null;
+    sdpMLineIndex: number | null;
+    usernameFragment?: string | undefined;
+  } | null;
+}
+
+export interface offerInterface {
+  sender: string;
+  receiver: string;
+  sdp: string;
+  type: RTCSdpType;
 }
 
 export interface messageInterface {
   id?: string;
   sender: string;
-  receiver:string;
+  receiver: string;
   roomId?: string;
   senderEm?: userInterface;
   receiverEm?: userInterface;
-  file?:{
+  file?: {
     type: string;
     name: string;
     link: string;
-  },
-  group?:string,
+  };
+  group?: string;
   content: string;
   created_At: string;
   isRead?: {

@@ -21,7 +21,6 @@ export default function NotificationProvider({
     };
     let sub1: StompSubscription | null | undefined;
     if (user.subscribe){
-      console.log("Subscribing to notification topic");
     sub1 = user.subscribe("/user/topic/notifications", handle);}
 
     // socket.on("receive_friend_request", handle);
