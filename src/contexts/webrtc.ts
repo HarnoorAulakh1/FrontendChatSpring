@@ -1,41 +1,21 @@
+import type { webrtcInterface } from "@/lib/types";
 import { createContext } from "react";
 
 export const webrtcContext = createContext<{
-  data: {
-    pc: RTCPeerConnection | null;
-    status: string;
-    sdp: string;
-    type: RTCSdpType;
-    callScreen: string;
-    callerId: string;
-    calleeId: string;
-    localStream: MediaStream;
-    remoteStream: MediaStream;
-  };
-  setData: React.Dispatch<
-    React.SetStateAction<{
-      pc: RTCPeerConnection | null;
-      status: string;
-      sdp: string;
-      type: RTCSdpType;
-      callScreen: string;
-      callerId: string;
-      calleeId: string;
-      localStream: MediaStream;
-      remoteStream: MediaStream;
-    }>
-  >;
+  data: webrtcInterface;
+  setData: React.Dispatch<React.SetStateAction<webrtcInterface>>;
 }>({
   data: {
     pc: null,
     status: "disconnected",
     type: {} as RTCSdpType,
+    accepted: false,
     sdp: "",
-    callScreen: null,
+    callScreen: "",
     callerId: "",
     calleeId: "",
-    localStream: new MediaStream(),
-    remoteStream: new MediaStream(),
+    localStream: null,
+    remoteStream: null,
   },
   setData: () => {},
 });

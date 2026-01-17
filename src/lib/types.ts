@@ -20,7 +20,7 @@ export interface userInterface {
 export interface callInterface {
   sender: string;
   receiver: string;
-  status: "accepted" | "declined" | "busy" | "calling";
+  status: "accepted" | "declined" | "busy" | "calling" | "ended";
 }
 
 export interface iceInterface {
@@ -38,6 +38,19 @@ export interface offerInterface {
   sdp: string;
   type: RTCSdpType;
 }
+
+export interface webrtcInterface {
+    pc: RTCPeerConnection | null;
+    status: string;
+    accepted: boolean;
+    sdp: string;
+    type: RTCSdpType;
+    callScreen: string;
+    callerId: string;
+    calleeId: string;
+    localStream: MediaStream | null;
+    remoteStream: MediaStream | null;
+  }
 
 export interface messageInterface {
   id?: string;

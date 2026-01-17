@@ -2,26 +2,17 @@ import React, { useContext, useEffect, useState } from "react";
 import { webrtcContext } from "./webrtc";
 import { profileContext } from "./profile";
 import type { StompSubscription } from "@stomp/stompjs";
-import type { callInterface, iceInterface, offerInterface } from "@/lib/types";
+import type { callInterface, iceInterface, offerInterface, webrtcInterface } from "@/lib/types";
 import VideoCall from "@/components/webrtc/videoCall";
 export default function WebrtcProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [data, setData] = useState<{
-    pc: RTCPeerConnection | null;
-    status: string;
-    sdp: string;
-    type: RTCSdpType;
-    callScreen: string;
-    callerId: string;
-    calleeId: string;
-    localStream: MediaStream;
-    remoteStream: MediaStream;
-  }>({
+  const [data, setData] = useState<webrtcInterface>({
     pc: null,
     status: "disconnected",
+    accepted: false,
     sdp: "",
     type: {} as RTCSdpType,
     callScreen: "",
@@ -33,6 +24,8 @@ export default function WebrtcProvider({
 
   const { user } = useContext(profileContext);
   const [iceQueue, setIceQueue] = useState<RTCIceCandidate[]>([]);
+  const remoteStreamRef = React.useRef<MediaStream>(new MediaStream());
+  const playedRef = React.useRef<boolean>(false);
 
   useEffect(() => {
     console.log("WebRTC Provider: Setting up subscriptions");
@@ -51,6 +44,24 @@ export default function WebrtcProvider({
               receiver: sender,
               sender: user.id,
             });
+        }
+      };
+      pc.ontrack = (event) => {
+        const track = event.track;
+        console.log("Received remote track:", event);
+
+        if (
+          !remoteStreamRef.current.getTracks().some((t) => t.id === track.id)
+        ) {
+          remoteStreamRef.current.addTrack(track);
+        }
+
+        if (!playedRef.current) {
+          setData((x) => ({
+            ...x,
+            remoteStream: remoteStreamRef.current,
+          }));
+          playedRef.current = true;
         }
       };
 
@@ -83,6 +94,11 @@ export default function WebrtcProvider({
             type: data1.type,
           })
         );
+        setData((x) => ({
+          ...x,
+          status: "connected",
+          accepted: true,
+        }));
       }
     }
 
@@ -167,7 +183,7 @@ export default function WebrtcProvider({
     return () => {
       if (sub1) sub1.unsubscribe();
     };
-  }, [user, user.subscribe,setIceQueue]);
+  }, [user, user.subscribe, setIceQueue]);
 
   useEffect(() => {
     //console.log("adding ICE candidate successfully", iceQueue, data.pc);

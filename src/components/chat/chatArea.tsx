@@ -62,6 +62,8 @@ function Messaging({
   const { setMessage } = useContext(messageContext);
   const [file, setFile] = useState<File>();
   const { setData } = useContext(webrtcContext);
+  const remoteStreamRef = useRef<MediaStream>(new MediaStream());
+  const playedRef = useRef<boolean>(false);
 
   // function handleUserGesture() {
   //   console.log("User gesture detected");
@@ -91,6 +93,22 @@ function Messaging({
             receiver: id,
             sender: user.id,
           });
+      }
+    };
+    pc.ontrack = (event) => {
+      const track = event.track;
+      console.log("Received remote track:", event);
+
+      if (!remoteStreamRef.current.getTracks().some((t) => t.id === track.id)) {
+        remoteStreamRef.current.addTrack(track);
+      }
+
+      if (!playedRef.current) {
+        setData((x) => ({
+          ...x,
+          remoteStream: remoteStreamRef.current,
+        }));
+        playedRef.current = true;
       }
     };
     const stream = await navigator.mediaDevices.getUserMedia({
