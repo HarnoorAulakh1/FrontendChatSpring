@@ -6,7 +6,6 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { messageContext } from "../../contexts/message";
 import { currentContext } from "@/contexts/current";
 import Landing from "./landing";
-import { IoMic } from "react-icons/io5";
 import { profileContext } from "@/contexts/profile";
 import type { messageInterface } from "@/lib/types";
 import { formatTime } from "@/lib/utils";
@@ -17,8 +16,6 @@ import { GoSidebarCollapse } from "react-icons/go";
 import type { StompSubscription } from "node_modules/@stomp/stompjs/esm6/stomp-subscription";
 import { TypingLoader } from "@/lib/loader";
 import { webrtcContext } from "@/contexts/webrtc";
-import Popup from "@/lib/popup";
-import VideoCall from "../webrtc/videoCall";
 
 export default function ChatArea() {
   const {
@@ -61,7 +58,7 @@ function Messaging({
   const { user, setUser } = useContext(profileContext);
   const { setMessage } = useContext(messageContext);
   const [file, setFile] = useState<File>();
-  const { setData } = useContext(webrtcContext);
+  const { data, setData } = useContext(webrtcContext);
   const remoteStreamRef = useRef<MediaStream>(new MediaStream());
   const playedRef = useRef<boolean>(false);
 
@@ -72,6 +69,13 @@ function Messaging({
   //   //remoteRef.current?.play().catch(() => {});
   // }
 
+  useEffect(() => {
+    if (data.status == "disconnected") {
+      playedRef.current = false;
+      remoteStreamRef.current.getTracks().forEach((t) => t.stop());
+      remoteStreamRef.current = new MediaStream();
+    }
+  }, [data.status]);
   async function createOffer() {
     console.log("Creating offer to", id);
     if (user.sendMessage) {
@@ -97,13 +101,14 @@ function Messaging({
     };
     pc.ontrack = (event) => {
       const track = event.track;
-      console.log("Received remote track:", event);
+      console.log("Received remote track:", event, playedRef.current);
 
       if (!remoteStreamRef.current.getTracks().some((t) => t.id === track.id)) {
         remoteStreamRef.current.addTrack(track);
       }
 
       if (!playedRef.current) {
+        console.log("Playing remote stream for the first time");
         setData((x) => ({
           ...x,
           remoteStream: remoteStreamRef.current,
@@ -152,7 +157,7 @@ function Messaging({
     const handleNewMessage = async (message: messageInterface) => {
       try {
         await api.post(
-          `/message/markAsRead?sender=${user.id}&receiver=${id}&readBy=${user.id}&time=${message.created_At}`
+          `/message/markAsRead?sender=${user.id}&receiver=${id}&readBy=${user.id}&time=${message.created_At}`,
         );
       } catch (error) {
         console.error("Error marking messages as read:", error);
@@ -211,7 +216,7 @@ function Messaging({
     async function getMessages() {
       try {
         const response = await api.get(
-          `/message/getMessages?sender=${user.id}&receiver=${id}&roomId=`
+          `/message/getMessages?sender=${user.id}&receiver=${id}&roomId=`,
         );
         if (response.status === 200) {
           const data = response.data;
@@ -417,7 +422,9 @@ function Message({
   const { user } = useContext(profileContext);
   const [time1] = useState<string>(formatTime(time));
   const [isRead, setRead] = useState(
-    readBy && readBy.length > 0 && readBy.some((read) => read.user === receiver)
+    readBy &&
+      readBy.length > 0 &&
+      readBy.some((read) => read.user === receiver),
   );
   useEffect(() => {
     const handleMessageRead = (data: {

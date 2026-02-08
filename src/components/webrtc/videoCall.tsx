@@ -16,13 +16,18 @@ export default function VideoCall() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const remoteRef = useRef<HTMLVideoElement>(null);
-  const remoteStreamRef = useRef<MediaStream | null>(new MediaStream());
+  const remoteStreamRef = useRef<MediaStream | null>(null);
   const { data, setData } = useContext(webrtcContext);
   const { user } = useContext(profileContext);
   const [callData, setCallData] = useState<{
     caller: userInterface;
     callee: userInterface;
   }>();
+
+  useEffect(() => {
+    setMuted(false);
+    setVideoOff(false);
+  }, [data.callScreen, data.pc, data.localStream, data.remoteStream]);
 
   const toggleMute = () => {
     const track = streamRef.current!.getAudioTracks()[0];
@@ -38,9 +43,18 @@ export default function VideoCall() {
     setVideoOff(!track.enabled);
   };
 
+  // To end call and reset the states and streams
   const endCall = useCallback(
     (status: string, relay: boolean) => {
-      console.log("Ending call safely...", data.localStream, data.remoteStream,localVideoRef.current,streamRef.current,remoteRef.current,remoteStreamRef.current);
+      console.log(
+        "Ending call safely...",
+        data.localStream,
+        data.remoteStream,
+        localVideoRef.current,
+        streamRef.current,
+        remoteRef.current,
+        remoteStreamRef.current,
+      );
       navigator.mediaDevices
         .getUserMedia({ video: true, audio: true })
         .then((stream) => {
@@ -56,14 +70,12 @@ export default function VideoCall() {
           localVideoRef.current.srcObject = null;
           streamRef.current = null;
         }
-        if (remoteStreamRef.current && remoteRef.current) {
-          console.log("Stopping remote stream tracks...");
-          remoteStreamRef.current.getTracks().forEach((track) => {
-            track.stop();
-          });
+        if (remoteRef.current) {
           remoteRef.current.srcObject = null;
-          remoteStreamRef.current = null;
+          remoteRef.current.load();
         }
+        remoteStreamRef.current?.getTracks().forEach((t) => t.stop());
+        remoteStreamRef.current = null;
       } else {
         if (data.localStream) {
           console.log("Stopping local stream tracks...");
@@ -96,7 +108,7 @@ export default function VideoCall() {
         data.pc = null;
       }
 
-      remoteStreamRef.current = new MediaStream();
+      remoteStreamRef.current = null;
 
       setData((x) => ({
         ...x,
@@ -121,12 +133,15 @@ export default function VideoCall() {
 
       console.log("Call fully disconnected");
     },
-    [data, setData, user]
+    [data, setData, user],
   );
+
+  //Set the remote and local Stream on successfull connection
 
   useEffect(() => {
     if (
       (data.callScreen === "outgoing" || data.callScreen === "incoming") &&
+      data.remoteStream != null &&
       data.pc &&
       data.accepted
     ) {
@@ -134,7 +149,12 @@ export default function VideoCall() {
       remoteRef.current!.srcObject = data.remoteStream;
       streamRef.current = data.localStream;
       remoteStreamRef.current = data.remoteStream;
-      console.log("Local stream set for outgoing call:", data.localStream);
+      // console.log(
+      //   "Local stream st for outgoing cal:",
+      //   data.localStream,
+      //   "Remote stream:",
+      //   data.remoteStream,
+      // );
     }
   }, [
     data.callScreen,
@@ -144,18 +164,20 @@ export default function VideoCall() {
     data.accepted,
   ]);
 
+  // To get Caller-Caller data and to subscribe to call end/decline messages
+
   useEffect(() => {
     async function getUserData() {
       if (!data.callerId || !data.calleeId) return;
       try {
         const responseCaller = await api.get(
-          "/user/getUserById/" + data.callerId
+          "/user/getUserById/" + data.callerId,
         );
         const responseCallee = await api.get(
-          "/user/getUserById/" + data.calleeId
+          "/user/getUserById/" + data.calleeId,
         );
-        console.log("Caller Data:", responseCaller.data);
-        console.log("Callee Data:", responseCallee.data);
+        // console.log("Caller Data:", responseCaller.data);
+        // console.log("Callee Data:", responseCallee.data);
         setCallData({
           caller: responseCaller.data,
           callee: responseCallee.data,
@@ -182,6 +204,7 @@ export default function VideoCall() {
     };
   }, [data.callerId, data.calleeId, user, user.subscribe, user.id, endCall]);
 
+  // Handle the incoming call offer and answer
   const handleCall = async (status: "accepted" | "declined") => {
     if (status === "declined") {
       console.log(
@@ -189,7 +212,7 @@ export default function VideoCall() {
         localVideoRef.current,
         streamRef.current,
         remoteRef.current,
-        remoteStreamRef.current
+        remoteStreamRef.current,
       );
       console.log("Declining call with data:", data);
       setData((x) => ({
@@ -218,7 +241,7 @@ export default function VideoCall() {
             new RTCSessionDescription({
               sdp: data.sdp,
               type: data.type,
-            })
+            }),
           )
           .then(() => {
             setData((x) => ({ ...x, status: "connected" }));
@@ -264,7 +287,7 @@ export default function VideoCall() {
               ref={localVideoRef}
               autoPlay
               playsInline
-              muted={true}
+              muted={muted}
               className="absolute top-4 right-4 w-32 h-44 rounded-xl object-cover border border-gray-700"
             />
 

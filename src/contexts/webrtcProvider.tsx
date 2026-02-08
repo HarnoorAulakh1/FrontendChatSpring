@@ -2,7 +2,12 @@ import React, { useContext, useEffect, useState } from "react";
 import { webrtcContext } from "./webrtc";
 import { profileContext } from "./profile";
 import type { StompSubscription } from "@stomp/stompjs";
-import type { callInterface, iceInterface, offerInterface, webrtcInterface } from "@/lib/types";
+import type {
+  callInterface,
+  iceInterface,
+  offerInterface,
+  webrtcInterface,
+} from "@/lib/types";
 import VideoCall from "@/components/webrtc/videoCall";
 export default function WebrtcProvider({
   children,
@@ -28,11 +33,19 @@ export default function WebrtcProvider({
   const playedRef = React.useRef<boolean>(false);
 
   useEffect(() => {
+    if (data.status == "disconnected"){ playedRef.current = false;
+      remoteStreamRef.current.getTracks().forEach((t) => t.stop());
+      remoteStreamRef.current = new MediaStream();
+    }
+  }, [data.status]);
+
+  useEffect(() => {
     console.log("WebRTC Provider: Setting up subscriptions");
     let sub1: StompSubscription | null = null,
       sub2: StompSubscription | null = null,
       sub3: StompSubscription | null = null;
     function handleIncomingCall(sender: string) {
+      console.log("Handling incoming call from:", data);
       const pc = new RTCPeerConnection({
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
       });
@@ -48,7 +61,7 @@ export default function WebrtcProvider({
       };
       pc.ontrack = (event) => {
         const track = event.track;
-        console.log("Received remote track:", event);
+        console.log("Received remote track:", event,playedRef.current);
 
         if (
           !remoteStreamRef.current.getTracks().some((t) => t.id === track.id)
@@ -57,6 +70,7 @@ export default function WebrtcProvider({
         }
 
         if (!playedRef.current) {
+          console.log("Playing remote stream for the first time");
           setData((x) => ({
             ...x,
             remoteStream: remoteStreamRef.current,
@@ -92,7 +106,7 @@ export default function WebrtcProvider({
           new RTCSessionDescription({
             sdp: data1.sdp,
             type: data1.type,
-          })
+          }),
         );
         setData((x) => ({
           ...x,
@@ -124,19 +138,19 @@ export default function WebrtcProvider({
             }
             return prev;
           });
-        }
+        },
       );
       sub2 = user.subscribe(
         "/user/topic/offer",
         async (message: offerInterface) => {
           handleOffer(message);
-        }
+        },
       );
       sub3 = user.subscribe(
         "/user/topic/answer",
         async (message: offerInterface) => {
           acceptAnswer(message);
-        }
+        },
       );
     }
     return () => {
