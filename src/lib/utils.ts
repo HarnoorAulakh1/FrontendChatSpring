@@ -1,7 +1,7 @@
 import axios from "axios";
 //https://api.aulakh.site/
 
-const url=import.meta.env.VITE_PRODUCTION || "http://localhost:8000";
+const url=import.meta.env.VITE_PRODUCTION || "http://localhost:4000";
 
 export const api = axios.create({
   baseURL: url,

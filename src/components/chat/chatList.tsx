@@ -138,7 +138,7 @@ function ChatListItem({
       if (sub2 != null) sub2.unsubscribe();
       if (sub4 != null) sub4.unsubscribe();
     };
-  }, [username, id, user.id, user.subscribe, user1.id]);
+  }, [username, id, user.id, user.subscribe, user1.id,user]);
 
   useEffect(() => {
     if (message.sender == id || message.receiver == id) {
