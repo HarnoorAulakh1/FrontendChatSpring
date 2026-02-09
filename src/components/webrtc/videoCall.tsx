@@ -287,7 +287,7 @@ export default function VideoCall() {
               ref={localVideoRef}
               autoPlay
               playsInline
-              muted={muted}
+              muted={true}
               className="absolute top-4 right-4 w-32 h-44 rounded-xl object-cover border border-gray-700"
             />
 
