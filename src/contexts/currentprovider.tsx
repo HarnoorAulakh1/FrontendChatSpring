@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { currentContext } from "./current";
-import type { userInterface } from "@/lib/types";
+import type { userInterface } from "../lib/types";
 export default function CurrentProvider({
   children,
 }: {

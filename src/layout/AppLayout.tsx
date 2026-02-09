@@ -1,14 +1,14 @@
-import ChatArea from "@/components/chat/chatArea";
-import SideBar from "@/components/sidebar";
+import ChatArea from "../components/chat/chatArea";
+import SideBar from "../components/sidebar";
 import { useContext, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { api } from "../lib/utils";
-import { profileContext } from "@/contexts/profile";
+import { profileContext } from "../contexts/profile";
 import { useState } from "react";
-import Loader from "@/lib/loader";
-import useNotify from "@/hooks/useNotify";
-import type { notificationInterface } from "@/lib/types";
-import StompSocket from "@/lib/StompSocket";
+import Loader from "../lib/loader";
+import useNotify from "../hooks/useNotify";
+import type { notificationInterface } from "../lib/types";
+import StompSocket from "../lib/StompSocket";
 
 export default function AppLayout() {
   const navigate = useNavigate();

@@ -1,14 +1,14 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { api, formatTime } from "@/lib/utils";
-import type { messageInterface, roomMember } from "@/lib/types";
+import { api, formatTime } from "../../lib/utils";
+import type { messageInterface, roomMember } from "../../lib/types";
 import { IoCheckmarkDoneOutline } from "react-icons/io5";
 import { FaFileAlt } from "react-icons/fa";
-import StompSocket from "@/lib/StompSocket";
+import StompSocket from "../../lib/StompSocket";
 import { useNavigate } from "react-router";
-import { profileContext } from "@/contexts/profile";
+import { profileContext } from "../../contexts/profile";
 import { IoIosCall, IoIosSend } from "react-icons/io";
 import { FaPlus, FaVideo } from "react-icons/fa6";
-import { TypingLoader } from "@/lib/loader";
+import { TypingLoader } from "../../lib/loader";
 
 export default function RoomChat() {
   const [member, setMember] = useState<roomMember>();

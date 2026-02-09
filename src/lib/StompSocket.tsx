@@ -1,7 +1,7 @@
 import { useState, useRef, useContext, useEffect } from "react";
 import { Client, type StompSubscription } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
-import { profileContext } from "@/contexts/profile";
+import { profileContext } from "../contexts/profile";
 import { useCallback } from "react";
 import Cookies from  "js-cookie";
 

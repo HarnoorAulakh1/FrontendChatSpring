@@ -1,10 +1,10 @@
 import { BsChatLeftDots } from "react-icons/bs";
 import { useContext, useState } from "react";
-import { api } from "@/lib/utils";
-import useNotify from "@/hooks/useNotify";
-import { profileContext } from "@/contexts/profile";
+import { api } from "../../lib/utils";
+import useNotify from "../../hooks/useNotify";
+import { profileContext } from "../../contexts/profile";
 import { useNavigate } from "react-router";
-import Loading from "@/lib/loader";
+import Loading from "../../lib/loader";
 
 export default function Auth() {
   const [isLogin, setter] = useState(true);

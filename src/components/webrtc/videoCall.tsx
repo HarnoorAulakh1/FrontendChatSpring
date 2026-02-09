@@ -7,7 +7,7 @@ import { IoMicOffSharp } from "react-icons/io5";
 import { webrtcContext } from "@/contexts/webrtc";
 import { api } from "@/lib/utils";
 import type { callInterface, userInterface } from "@/lib/types";
-import { profileContext } from "@/contexts/profile";
+import { profileContext } from "../../contexts/profile";
 import type { StompSubscription } from "@stomp/stompjs";
 
 export default function VideoCall() {

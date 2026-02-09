@@ -8,7 +8,7 @@ import type {
   offerInterface,
   webrtcInterface,
 } from "@/lib/types";
-import VideoCall from "@/components/webrtc/videoCall";
+import VideoCall from "../components/webrtc/videoCall";
 export default function WebrtcProvider({
   children,
 }: {

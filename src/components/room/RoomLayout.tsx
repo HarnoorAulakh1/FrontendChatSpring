@@ -1,4 +1,4 @@
-import Background from "@/lib/background";
+import Background from "../../lib/background";
 import { Outlet } from "react-router";
 
 export default function RoomLayout() {

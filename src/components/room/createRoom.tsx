@@ -1,4 +1,4 @@
-import { api } from "@/lib/utils";
+import { api } from "../../lib/utils";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
