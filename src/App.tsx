@@ -49,11 +49,9 @@ function App() {
         <MessageProvider>
           <NotificationProvider>
             <CurrentProvider>
-              <MessageProvider>
                 <WebrtcProvider>
                   <RouterProvider router={router} />
                 </WebrtcProvider>
-              </MessageProvider>
             </CurrentProvider>
           </NotificationProvider>
         </MessageProvider>
