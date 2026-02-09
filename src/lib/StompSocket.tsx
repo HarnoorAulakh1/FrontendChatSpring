@@ -16,6 +16,7 @@ export default function useStompClient() {
   >([]);
   //const token=Cookies.get("JWT_TOKEN");
   const { user, setUser } = useContext(profileContext);
+  const socketUrl   = import.meta.env.VITE_PRODUCTION || "http://localhost:4000";
   const connectingRef = useRef(false);
   const [connected, setConnected] = useState(false);
   const clientRef = useRef<Client | null>(null);
@@ -70,7 +71,7 @@ export default function useStompClient() {
 
   useEffect(() => {
     if (connected) return;
-    const socket = new SockJS(`http://localhost:4000/ws`);
+    const socket = new SockJS(`${socketUrl}/ws`);
     const stompClient = new Client({
       webSocketFactory: () => socket,
     });
@@ -90,7 +91,7 @@ export default function useStompClient() {
       //console.log("🔌 Cleaning up...");
       if (!connected) stompClient.deactivate();
     };
-  }, [user.id, onConnect,Cookies]);
+  }, [user.id, onConnect,Cookies,socketUrl]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -117,7 +118,7 @@ export default function useStompClient() {
         }
         const client = new Client({
           webSocketFactory: () =>
-            new SockJS(`http://localhost:4000/ws`),
+            new SockJS(`${socketUrl}/ws`),
         });
 
         // If connected successfully
@@ -149,7 +150,7 @@ export default function useStompClient() {
       }, 3000);
     }
     return () => clearTimeout(timeout);
-  }, [connected, user.id, retry]);
+  }, [connected, user.id, retry,socketUrl]);
 
   useEffect(() => {
     setUser((x) => ({
