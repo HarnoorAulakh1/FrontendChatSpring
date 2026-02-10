@@ -89,9 +89,9 @@ function Messaging({
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         {
-          urls: "turn:free.expressturn.com:3478",
-          username: "000000002086098388",
-          credential: "ueJtH+gb9wfnfmMonIu9q2tPlxU=",
+          urls: "turn:api1.aulakh.site:3478?transport=udp",
+          username: "user1",
+          credential: "123456",
         },
       ],
     });
