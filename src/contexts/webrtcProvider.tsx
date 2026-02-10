@@ -33,7 +33,8 @@ export default function WebrtcProvider({
   const playedRef = React.useRef<boolean>(false);
 
   useEffect(() => {
-    if (data.status == "disconnected"){ playedRef.current = false;
+    if (data.status == "disconnected") {
+      playedRef.current = false;
       remoteStreamRef.current.getTracks().forEach((t) => t.stop());
       remoteStreamRef.current = new MediaStream();
     }
@@ -47,7 +48,14 @@ export default function WebrtcProvider({
     function handleIncomingCall(sender: string) {
       console.log("Handling incoming call from:", data);
       const pc = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          {
+            urls: "turn:free.expressturn.com:3478",
+            username: "000000002086098388",
+            credential: "ueJtH+gb9wfnfmMonIu9q2tPlxU=",
+          },
+        ],
       });
       pc.onicecandidate = (event) => {
         if (event.candidate) {
@@ -61,7 +69,7 @@ export default function WebrtcProvider({
       };
       pc.ontrack = (event) => {
         const track = event.track;
-        console.log("Received remote track:", event,playedRef.current);
+        console.log("Received remote track:", event, playedRef.current);
 
         if (
           !remoteStreamRef.current.getTracks().some((t) => t.id === track.id)

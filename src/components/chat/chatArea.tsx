@@ -86,7 +86,14 @@ function Messaging({
       });
     }
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+          urls: "turn:free.expressturn.com:3478",
+          username: "000000002086098388",
+          credential: "ueJtH+gb9wfnfmMonIu9q2tPlxU=",
+        },
+      ],
     });
 
     pc.onicecandidate = (event) => {
